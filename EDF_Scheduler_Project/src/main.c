@@ -5,6 +5,7 @@
  *      Author: mdellavi
  */
 
+/*-----------------------------------------------------------*/
 /* Standard includes. */
 #include <stdint.h>
 #include <stdio.h>
@@ -18,6 +19,7 @@
 #include "../FreeRTOS_Source/include/timers.h"
 /* Includes */
 #include "rtos_hooks.h"
+#include "dd_scheduler.h"
 
 /*-----------------------------------------------------------*/
 #define mainQUEUE_LENGTH 100
@@ -32,11 +34,6 @@
 #define red_led		LED5
 #define blue_led	LED6
 
-
-/*
- * The queue send and receive tasks as described in the comments at the top of
- * this file.
- */
 static void prvSetupHardware( void );
 static void Manager_Task( void *pvParameters );
 static void Blue_LED_Controller_Task( void *pvParameters );
