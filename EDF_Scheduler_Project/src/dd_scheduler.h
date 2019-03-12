@@ -30,7 +30,7 @@ typedef struct{
 
 }Task_param_s;
 
-typedef struct Task_list_s{
+typedef struct{
 
 	TaskHandle_t handle;
 	TickType_t deadline;
@@ -41,9 +41,7 @@ typedef struct Task_list_s{
 
 }Task_list_s, *Task_list_sPtr;
 
-
 typedef Task_list_s OverdueList, TaskList;
-
 typedef enum {
 	CREATE,
 	DELETE,
@@ -51,11 +49,66 @@ typedef enum {
 	REQUEST_OVERDUE
 } MessageType_t;
 
+typedef struct{
 
+	MessageType_t MessageType;
 
+}Scheduler_request_message;
+
+typedef struct{
+
+	MessageType_t MessageType;
+	uint32_t index;
+	TickType_t deadline;
+
+}Task_create_message;
+
+typedef struct{
+
+	MessageType_t MessageType;
+	TaskHandle_t handle;
+
+}Task_create_response;
+
+typedef struct{
+
+	MessageType_t MessageType;
+	TaskHandle_t handle;
+
+}Task_delete_message;
+
+typedef struct{
+
+	MessageType_t MessageType;
+	uint32_t retval;
+
+}Task_delete_response;
+
+typedef struct{
+
+	MessageType_t MessageType;
+	Task_list_s list;
+
+}Task_request_response;
+
+typedef union{
+
+	Scheduler_request_message RequestMessage;
+	Task_create_message CreateMessage;
+	Task_delete_message DeleteMessage;
+	Task_create_response CreateResponse;
+	Task_delete_response DeleteResponse;
+	Task_request_response TaskListResponse;
+
+}DD_message;
+
+/*-----------------------------------------------------------*/
 TaskHandle_t dd_tcreate(Task_param_s);
 uint32_t dd_delete(TaskHandle_t);
-uint32_t dd_return_active_list(Task_list_s**);
-uint32_t dd_return_overdue_list(Task_list_s**);
+uint32_t dd_return_active_list(Task_list_s*);
+uint32_t dd_return_overdue_list(Task_list_s*);
 
+/*-----------------------------------------------------------*/
+void _messageHandler(Scheduler_request_message*);
+void _deadlineHandler();
 

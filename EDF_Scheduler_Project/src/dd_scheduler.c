@@ -8,6 +8,12 @@
 
 #include "dd_scheduler.h"
 
+/*-----------------------------------------------------------*/
+
+
+
+/*-----------------------------------------------------------*/
+
 TaskHandle_t dd_tcreate(Task_param_s param){
 	/*
 	 * open a queue
@@ -34,7 +40,7 @@ uint32_t dd_delete(TaskHandle_t handle){
 	return 0;
 }
 
-uint32_t dd_return_active_list(Task_list_s **list){
+uint32_t dd_return_active_list(Task_list_s *list){
 	/*
 	 *	open a queue
 	 *	create task list request message
@@ -46,7 +52,7 @@ uint32_t dd_return_active_list(Task_list_s **list){
 	return 0;
 }
 
-uint32_t dd_return_overdue_list(Task_list_s **list){
+uint32_t dd_return_overdue_list(Task_list_s *list){
 	/*
 	 *	open a queue
 	 *	create task list request message
@@ -57,3 +63,4 @@ uint32_t dd_return_overdue_list(Task_list_s **list){
 	 */
 	return 0;
 }
+
