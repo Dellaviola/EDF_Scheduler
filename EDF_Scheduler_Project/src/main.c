@@ -78,18 +78,47 @@ int main(void)
 
 static void DD_Scheduler_Task( void *pvParameters )
 {
-	DD_message received;
-	DD_message out;
+	DD_message Received;
+	DD_message Out;
 
 	while(1)
 	{
 
-		if ( xQueueReceive( SchedulerQueue, &received, (TickType_t) 0 ) ) {
-			printf("Task Message: %d\n", received.CreateMessage.MessageType);
-			out.CreateResponse.MessageType = CREATE;
-			out.CreateResponse.TaskHandle = received.CreateMessage.TaskHandle;
-			xQueueSend(received.CreateMessage.ReplyQueue, &out, 1000);
+		if ( xQueueReceive( SchedulerQueue, &Received, (TickType_t) 0 ) ) {
+
+			printf("Task Message: %d\n", Received.ID.MessageType);
+
+			switch(Received.ID.MessageType)
+			{
+				case(CREATE):
+					printf("Acknowledge Create Request\n");
+					Out.CreateResponse.MessageType = CREATE;
+					Out.CreateResponse.TaskHandle = Received.CreateMessage.TaskHandle;
+					xQueueSend(Received.CreateMessage.ReplyQueue, &Out, 1000);
+				break;
+
+				case(DELETE):
+					printf("Acknowledge Delete Request\n");
+					Out.DeleteResponse.MessageType = CREATE;
+					Out.DeleteResponse.retval = DELETE;
+					xQueueSend(Received.DeleteMessage.ReplyQueue, &Out, 1000);
+				break;
+
+				case(REQUEST_ACTIVE):
+					//wad
+				break;
+
+				case(REQUEST_OVERDUE):
+					//wad
+				break;
+
+				default:
+
+				break;
+			}
 		}
+
+
 //		printf("HELLO WORLD");
 	}
 }
@@ -107,7 +136,9 @@ static void DD_Generator_Task( void *pvParameters )
 		TaskParam.execution = 200;
 		strcpy(TaskParam.name,"user");
 		TaskHandle_t x = dd_tcreate(TaskParam);
-		vTaskDelay(1000);
+		vTaskDelay(pdMS_TO_TICKS(1000));
+		dd_delete(x);
+		vTaskDelay(pdMS_TO_TICKS(1000));
 	}
 }
 

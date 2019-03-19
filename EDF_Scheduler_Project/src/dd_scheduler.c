@@ -34,7 +34,15 @@ TaskHandle_t dd_tcreate(Task_param_s param){
 
 
 
-	ReplyQueue = xQueueCreate(1,sizeof(DD_message));
+	if (ReplyQueue == NULL)
+	{
+		ReplyQueue = xQueueCreate(1,sizeof(DD_message));
+	}
+	else
+	{
+		printf("Shouldn't be here");
+	}
+
 	vQueueAddToRegistry( ReplyQueue, "ReplyQueue" );
 	// Create task
 	Returned = xTaskCreate( param.task, param.name, configMINIMAL_STACK_SIZE, NULL, 0, &TaskHandle);
@@ -60,8 +68,6 @@ TaskHandle_t dd_tcreate(Task_param_s param){
 
 	return TaskHandle;
 
-
-
 }
 
 uint32_t dd_delete(TaskHandle_t TaskHandle){
@@ -74,31 +80,37 @@ uint32_t dd_delete(TaskHandle_t TaskHandle){
 	 * destroy q
 	 * return
 	 */
-	QueueHandle_t ReplyQueue;
-	struct AMessage *pxMessage;
-	Task_create_message *DeleteMessage;
+	extern QueueHandle_t ReplyQueue;
+	extern QueueHandle_t SchedulerQueue;
+	DD_message Message;
 
 	// Create queue
-	ReplyQueue = xQueueCreate( 10, sizeof( unsigned long ) );
+	if (ReplyQueue == NULL)
+	{
+		ReplyQueue = xQueueCreate(1,sizeof(DD_message));
+	}
+	else
+	{
+		printf("Shouldn't be here");
+	}
 
 	// Delete task
 	vTaskDelete( TaskHandle );
 
 	// Create message struct
-	DeleteMessage->MessageType = DELETE;
-	DeleteMessage->ReplyQueue = ReplyQueue;
-	DeleteMessage->TaskHandle = TaskHandle;
+	Message.DeleteMessage.MessageType = DELETE;
+	Message.DeleteMessage.ReplyQueue = ReplyQueue;
+	Message.DeleteMessage.TaskHandle = TaskHandle;
 
 	// Send message struct to scheduler
-	xQueueSend( SchedulerQueue, &DeleteMessage, (TickType_t) 100 );
+	xQueueSend( SchedulerQueue, &Message, 1000 );
 
 	// Wait for reply @ queue
-	if ( xQueueReceive( ReplyQueue, &(pxMessage), (TickType_t ) 100 ) ) {
+	while ( xQueueReceive( ReplyQueue, &Message, 0 ) != pdTRUE) {;}
 		// Received message, delete queue
-		vQueueDelete( ReplyQueue );
-	}
-
-	return DELETE;
+	vQueueDelete( ReplyQueue );
+	printf("Deleted Task, returning %d\n", Message.DeleteResponse.retval);
+	return Message.DeleteResponse.retval;
 }
 
 uint32_t dd_return_active_list(Task_list_s *list){

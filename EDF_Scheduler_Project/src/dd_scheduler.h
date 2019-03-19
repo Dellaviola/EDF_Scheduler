@@ -110,7 +110,7 @@ typedef union DD_Message{
 	Task_create_response CreateResponse;
 	Task_delete_response DeleteResponse;
 	Task_request_response TaskListResponse;
-	ID_message id;
+	ID_message ID;
 
 }DD_message;
 
