@@ -114,8 +114,11 @@
 							<tool id="com.atollic.truestudio.ar.base.1731930478" name="Archiver" superClass="com.atollic.truestudio.ar.base"/>
 						</toolChain>
 					</folderInfo>
+					<fileInfo id="com.atollic.truestudio.exe.debug.1307762149.1661547865" name="heap_1.c" rcbsApplicability="disable" resourcePath="FreeRTOS_Source/portable/MemMang/heap_1.c" toolsToInvoke="com.atollic.truestudio.exe.debug.toolchain.gcc.1332771793.2012071298">
+						<tool id="com.atollic.truestudio.exe.debug.toolchain.gcc.1332771793.2012071298" name="C Compiler" superClass="com.atollic.truestudio.exe.debug.toolchain.gcc.1332771793"/>
+					</fileInfo>
 					<sourceEntries>
-						<entry excluding="portable/MemMang/heap_5.c|portable/MemMang/heap_4.c|portable/MemMang/heap_3.c|portable/MemMang/heap_2.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="FreeRTOS_Source"/>
+						<entry excluding="portable/MemMang/heap_1.c|portable/MemMang/heap_5.c|portable/MemMang/heap_3.c|portable/MemMang/heap_2.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="FreeRTOS_Source"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Libraries"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Utilities"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
@@ -128,7 +131,11 @@
 	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
 		<project id="STM32F4_Discovery_FreeRTOS_Simple_Demo.com.atollic.truestudio.exe.741886063" name="Executable" projectType="com.atollic.truestudio.exe"/>
 	</storageModule>
-	<storageModule moduleId="refreshScope"/>
+	<storageModule moduleId="refreshScope" versionNumber="2">
+		<configuration configurationName="Debug">
+			<resource resourceType="PROJECT" workspacePath="/EDF_Scheduler_Project"/>
+		</configuration>
+	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
 	<storageModule moduleId="scannerConfiguration">

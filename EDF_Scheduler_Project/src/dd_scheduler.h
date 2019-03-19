@@ -29,7 +29,7 @@ typedef struct Task_param_s{
 	TickType_t deadline;
 	TickType_t execution;
 	TaskFunction_t task;
-	char name[];
+	char name[10];
 
 }Task_param_s;
 
@@ -96,6 +96,11 @@ typedef struct Task_request_response{
 	Task_list_s list;
 
 }Task_request_response;
+typedef struct ID_message{
+
+	MessageType_t MessageType;
+
+}ID_message;
 
 typedef union DD_Message{
 
@@ -105,13 +110,14 @@ typedef union DD_Message{
 	Task_create_response CreateResponse;
 	Task_delete_response DeleteResponse;
 	Task_request_response TaskListResponse;
+	ID_message id;
 
 }DD_message;
 
 /*-----------------------------------------------------------*/
 // Global scheduler queue
 xQueueHandle SchedulerQueue;
-xQueueHandle MessageQueue;
+xQueueHandle ReplyQueue;
 
 /*-----------------------------------------------------------*/
 TaskHandle_t dd_tcreate(Task_param_s);

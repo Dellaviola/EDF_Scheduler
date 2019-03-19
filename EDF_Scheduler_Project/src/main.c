@@ -20,6 +20,7 @@
 /* Includes */
 #include "rtos_hooks.h"
 #include "dd_scheduler.h"
+#include "string.h"
 
 /*-----------------------------------------------------------*/
 
@@ -55,10 +56,10 @@ int main(void)
 
 	// Init queue
 	SchedulerQueue = xQueueCreate( 8, sizeof(DD_message) );
-	MessageQueue = xQueueCreate(8, sizeof(DD_message));
+
 
 	vQueueAddToRegistry( SchedulerQueue, "SchedulerQueue" );
-	vQueueAddToRegistry( MessageQueue, "MessageQueue" );
+
 
 	// Create Tasks
 	xTaskCreate( DD_Scheduler_Task, "Scheduler", configMINIMAL_STACK_SIZE, NULL, 2, NULL);
@@ -78,12 +79,16 @@ int main(void)
 static void DD_Scheduler_Task( void *pvParameters )
 {
 	DD_message received;
+	DD_message out;
 
 	while(1)
 	{
 
 		if ( xQueueReceive( SchedulerQueue, &received, (TickType_t) 0 ) ) {
 			printf("Task Message: %d\n", received.CreateMessage.MessageType);
+			out.CreateResponse.MessageType = CREATE;
+			out.CreateResponse.TaskHandle = received.CreateMessage.TaskHandle;
+			xQueueSend(received.CreateMessage.ReplyQueue, &out, 1000);
 		}
 //		printf("HELLO WORLD");
 	}
@@ -100,6 +105,7 @@ static void DD_Generator_Task( void *pvParameters )
 		TaskParam.task = DD_User_Task1;
 		TaskParam.deadline = 100;
 		TaskParam.execution = 200;
+		strcpy(TaskParam.name,"user");
 		TaskHandle_t x = dd_tcreate(TaskParam);
 		vTaskDelay(1000);
 	}

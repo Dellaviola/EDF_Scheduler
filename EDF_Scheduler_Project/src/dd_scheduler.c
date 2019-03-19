@@ -25,13 +25,17 @@ TaskHandle_t dd_tcreate(Task_param_s param){
 	 * return null or task handle
 	 */
 	// Variables
-//	QueueHandle_t ReplyQueue;
-	TaskHandle_t TaskHandle;
-	BaseType_t Returned;
-	DD_message CreateResponse;
-	DD_message CreateMessage;
+	extern QueueHandle_t ReplyQueue;
 	extern QueueHandle_t SchedulerQueue;
 
+	TaskHandle_t TaskHandle;
+	BaseType_t Returned;
+	DD_message Message;
+
+
+
+	ReplyQueue = xQueueCreate(1,sizeof(DD_message));
+	vQueueAddToRegistry( ReplyQueue, "ReplyQueue" );
 	// Create task
 	Returned = xTaskCreate( param.task, param.name, configMINIMAL_STACK_SIZE, NULL, 0, &TaskHandle);
 
@@ -41,18 +45,18 @@ TaskHandle_t dd_tcreate(Task_param_s param){
 	}
 
 	// Create message struct
-	CreateMessage.CreateMessage.MessageType = CREATE;
-	CreateMessage.CreateMessage.Deadline = param.deadline;
-	CreateMessage.CreateMessage.TaskHandle = param.task;
+	Message.CreateMessage.MessageType = CREATE;
+	Message.CreateMessage.Deadline = param.deadline;
+	Message.CreateMessage.TaskHandle = param.task;
+	Message.CreateMessage.ReplyQueue = ReplyQueue;
 
 	// Send message struct to scheduler
-	xQueueSend( SchedulerQueue, &CreateMessage, 0 );
+	xQueueSend( SchedulerQueue, &Message, 1000 );
 
 	// Wait for reply @ queue
-	if ( xQueueReceive( MessageQueue, &CreateResponse, 0 ) ) {
+	while ( xQueueReceive( ReplyQueue, &Message, 0 ) != pdTRUE) {;}
 		// Received message, delete queue
-//		vQueueDelete( ReplyQueue );
-	}
+	vQueueDelete( ReplyQueue );
 
 	return TaskHandle;
 
