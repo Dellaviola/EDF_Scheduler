@@ -30,6 +30,22 @@ static void DD_Monitor_Task( void *pvParameters );
 
 /*-----------------------------------------------------------*/
 
+struct MessageBuffer {
+	int MessageType;
+} MessageBuffer;
+
+/*-----------------------------------------------------------*/
+static void DD_User_Task1( void *pvParameters )
+{
+	while (1)
+	{
+		printf("User Task 1\n");
+		vTaskDelay(1000);
+	}
+}
+
+/*-----------------------------------------------------------*/
+
 int main(void)
 {
 
@@ -37,10 +53,17 @@ int main(void)
 	can be done here if it was not done before main() was called. */
 	prvSetupHardware();
 
+	// Init queue
+	SchedulerQueue = xQueueCreate( 8, sizeof(DD_message) );
+	MessageQueue = xQueueCreate(8, sizeof(DD_message));
+
+	vQueueAddToRegistry( SchedulerQueue, "SchedulerQueue" );
+	vQueueAddToRegistry( MessageQueue, "MessageQueue" );
+
 	// Create Tasks
-	xTaskCreate( DD_Scheduler_Task, "Scheduler", configMINIMAL_STACK_SIZE, NULL, 3, NULL);
+	xTaskCreate( DD_Scheduler_Task, "Scheduler", configMINIMAL_STACK_SIZE, NULL, 2, NULL);
 	xTaskCreate( DD_Generator_Task, "Generator", configMINIMAL_STACK_SIZE, NULL, 2, NULL);
-	xTaskCreate( DD_Monitor_Task, "Monitor", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
+//	xTaskCreate( DD_Monitor_Task, "Monitor", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
 
 
 	/* Start the tasks and timer running. */
@@ -54,10 +77,15 @@ int main(void)
 
 static void DD_Scheduler_Task( void *pvParameters )
 {
+	DD_message received;
 
 	while(1)
 	{
-		printf("HELLO WORLD");
+
+		if ( xQueueReceive( SchedulerQueue, &received, (TickType_t) 0 ) ) {
+			printf("Task Message: %d\n", received.CreateMessage.MessageType);
+		}
+//		printf("HELLO WORLD");
 	}
 }
 
@@ -65,9 +93,15 @@ static void DD_Scheduler_Task( void *pvParameters )
 
 static void DD_Generator_Task( void *pvParameters )
 {
+	Task_param_s TaskParam;
+
 	while(1)
 	{
-
+		TaskParam.task = DD_User_Task1;
+		TaskParam.deadline = 100;
+		TaskParam.execution = 200;
+		TaskHandle_t x = dd_tcreate(TaskParam);
+		vTaskDelay(1000);
 	}
 }
 
@@ -83,6 +117,7 @@ static void DD_Monitor_Task( void *pvParameters )
 }
 
 /*-----------------------------------------------------------*/
+// Necessary misc functions
 static void prvSetupHardware( void )
 {
 	/* Ensure all priority bits are assigned as preemption priority bits.

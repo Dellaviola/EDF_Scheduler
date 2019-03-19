@@ -23,10 +23,13 @@
 
 #endif /* DD_SCHEDULER_H_ */
 
-typedef struct{
+/*-----------------------------------------------------------*/
+typedef struct Task_param_s{
 
 	TickType_t deadline;
 	TickType_t execution;
+	TaskFunction_t task;
+	char name[];
 
 }Task_param_s;
 
@@ -49,49 +52,52 @@ typedef enum {
 	REQUEST_OVERDUE
 } MessageType_t;
 
-typedef struct{
+typedef struct Scheduler_request_message{
 
 	MessageType_t MessageType;
+	QueueHandle_t ReplyQueue;
 
 }Scheduler_request_message;
 
-typedef struct{
+typedef struct Task_create_message{
 
 	MessageType_t MessageType;
-	uint32_t index;
-	TickType_t deadline;
+	TickType_t Deadline;
+	QueueHandle_t ReplyQueue;
+	TaskHandle_t TaskHandle;
 
 }Task_create_message;
 
-typedef struct{
+typedef struct Task_create_response{
 
 	MessageType_t MessageType;
-	TaskHandle_t handle;
+	TaskHandle_t TaskHandle;
 
 }Task_create_response;
 
-typedef struct{
+typedef struct Task_delete_message{
 
 	MessageType_t MessageType;
-	TaskHandle_t handle;
+	TaskHandle_t TaskHandle;
+	QueueHandle_t ReplyQueue;
 
 }Task_delete_message;
 
-typedef struct{
+typedef struct Task_delete_response{
 
 	MessageType_t MessageType;
 	uint32_t retval;
 
 }Task_delete_response;
 
-typedef struct{
+typedef struct Task_request_response{
 
 	MessageType_t MessageType;
 	Task_list_s list;
 
 }Task_request_response;
 
-typedef union{
+typedef union DD_Message{
 
 	Scheduler_request_message RequestMessage;
 	Task_create_message CreateMessage;
@@ -103,12 +109,16 @@ typedef union{
 }DD_message;
 
 /*-----------------------------------------------------------*/
+// Global scheduler queue
+xQueueHandle SchedulerQueue;
+xQueueHandle MessageQueue;
+
+/*-----------------------------------------------------------*/
 TaskHandle_t dd_tcreate(Task_param_s);
 uint32_t dd_delete(TaskHandle_t);
 uint32_t dd_return_active_list(Task_list_s*);
 uint32_t dd_return_overdue_list(Task_list_s*);
 
 /*-----------------------------------------------------------*/
-void _messageHandler(Scheduler_request_message*);
-void _deadlineHandler();
+
 
