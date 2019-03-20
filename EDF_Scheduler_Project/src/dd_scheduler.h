@@ -20,31 +20,17 @@
 #include "../FreeRTOS_Source/include/task.h"
 #include "../FreeRTOS_Source/include/timers.h"
 
-
-#endif /* DD_SCHEDULER_H_ */
-
+#include "list.h"
 /*-----------------------------------------------------------*/
 typedef struct Task_param_s{
 
 	TickType_t deadline;
-	TickType_t execution;
+	TickType_t deadlinetick;
 	TaskFunction_t task;
 	char name[10];
 
 }Task_param_s;
 
-typedef struct{
-
-	TaskHandle_t handle;
-	TickType_t deadline;
-	TickType_t start;
-	uint32_t task_type;
-	struct Task_list_s* next;
-	struct Task_list_s* prev;
-
-}Task_list_s, *Task_list_sPtr;
-
-typedef Task_list_s OverdueList, TaskList;
 typedef enum {
 	CREATE,
 	DELETE,
@@ -93,7 +79,7 @@ typedef struct Task_delete_response{
 typedef struct Task_request_response{
 
 	MessageType_t MessageType;
-	Task_list_s list;
+	TaskList* List;
 
 }Task_request_response;
 typedef struct ID_message{
@@ -119,12 +105,15 @@ typedef union DD_Message{
 xQueueHandle SchedulerQueue;
 xQueueHandle ReplyQueue;
 
+
+
+
 /*-----------------------------------------------------------*/
 TaskHandle_t dd_tcreate(Task_param_s);
 uint32_t dd_delete(TaskHandle_t);
-uint32_t dd_return_active_list(Task_list_s*);
-uint32_t dd_return_overdue_list(Task_list_s*);
+uint32_t dd_return_active_list(const TaskList*);
+uint32_t dd_return_overdue_list(const TaskList*);
 
 /*-----------------------------------------------------------*/
 
-
+#endif /* DD_SCHEDULER_H_ */

@@ -21,19 +21,13 @@
 #include "rtos_hooks.h"
 #include "dd_scheduler.h"
 #include "string.h"
-
+#include "list.h"
 /*-----------------------------------------------------------*/
 
 static void prvSetupHardware( void );
 static void DD_Scheduler_Task( void *pvParameters );
 static void DD_Generator_Task( void *pvParameters );
 static void DD_Monitor_Task( void *pvParameters );
-
-/*-----------------------------------------------------------*/
-
-struct MessageBuffer {
-	int MessageType;
-} MessageBuffer;
 
 /*-----------------------------------------------------------*/
 static void DD_User_Task1( void *pvParameters )
@@ -60,11 +54,12 @@ int main(void)
 
 	vQueueAddToRegistry( SchedulerQueue, "SchedulerQueue" );
 
+	// Create Lists
 
 	// Create Tasks
 	xTaskCreate( DD_Scheduler_Task, "Scheduler", configMINIMAL_STACK_SIZE, NULL, 2, NULL);
 	xTaskCreate( DD_Generator_Task, "Generator", configMINIMAL_STACK_SIZE, NULL, 2, NULL);
-//	xTaskCreate( DD_Monitor_Task, "Monitor", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
+	xTaskCreate( DD_Monitor_Task, "Monitor", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
 
 
 	/* Start the tasks and timer running. */
@@ -84,7 +79,7 @@ static void DD_Scheduler_Task( void *pvParameters )
 	while(1)
 	{
 
-		if ( xQueueReceive( SchedulerQueue, &Received, (TickType_t) 0 ) ) {
+		if ( xQueueReceive( SchedulerQueue, &Received, (TickType_t) 1000 ) ) {
 
 			printf("Task Message: %d\n", Received.ID.MessageType);
 
@@ -105,17 +100,26 @@ static void DD_Scheduler_Task( void *pvParameters )
 				break;
 
 				case(REQUEST_ACTIVE):
-					//wad
+					printf("Acknowledge Active List Request\n");
+					Out.TaskListResponse.MessageType = REQUEST_ACTIVE;
+					Out.TaskListResponse.List = NULL;
+					xQueueSend(Received.RequestMessage.ReplyQueue, &Out, 1000);
 				break;
 
 				case(REQUEST_OVERDUE):
-					//wad
+					printf("Acknowledge Overdue List Request\n");
+					Out.TaskListResponse.MessageType = REQUEST_OVERDUE;
+					Out.TaskListResponse.List = NULL;
+					xQueueSend(Received.RequestMessage.ReplyQueue, &Out, 1000);
 				break;
 
 				default:
-
+					printf("nicelydone");
 				break;
 			}
+
+
+
 		}
 
 
@@ -132,8 +136,8 @@ static void DD_Generator_Task( void *pvParameters )
 	while(1)
 	{
 		TaskParam.task = DD_User_Task1;
-		TaskParam.deadline = 100;
-		TaskParam.execution = 200;
+		TaskParam.deadline = pdMS_TO_TICKS(100);
+		TaskParam.deadlinetick = xTaskGetTickCount() + TaskParam.deadline;
 		strcpy(TaskParam.name,"user");
 		TaskHandle_t x = dd_tcreate(TaskParam);
 		vTaskDelay(pdMS_TO_TICKS(1000));
