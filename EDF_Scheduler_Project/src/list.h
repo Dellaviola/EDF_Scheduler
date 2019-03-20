@@ -31,16 +31,18 @@ typedef struct TaskList{
 
 }TaskList, TaskNode;
 
-
 /*-----------------------------------------------------------*/
 
-// Global lists
+// Global Lists
 TaskList *ActiveList;
 TaskList *OverdueList;
 
+/*-----------------------------------------------------------*/
+
+// List Prototypes
 void list_init(void); //creates null list head
-void list_add(TaskNode *, TaskHandle_t, TickType_t);
-void list_remove(TaskNode *);
+void list_add(TaskList *, TaskHandle_t, TickType_t);
+void list_remove(TaskList *, TaskHandle_t);
 void list_delete(TaskList *);
 
 void list_size(TaskList *);

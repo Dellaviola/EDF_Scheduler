@@ -6,10 +6,12 @@
  */
 
 /*-----------------------------------------------------------*/
+
 /* Standard includes. */
 #include <stdint.h>
 #include <stdio.h>
 #include "stm32f4_discovery.h"
+
 /* Kernel includes. */
 #include "stm32f4xx.h"
 #include "../FreeRTOS_Source/include/FreeRTOS.h"
@@ -17,19 +19,24 @@
 #include "../FreeRTOS_Source/include/semphr.h"
 #include "../FreeRTOS_Source/include/task.h"
 #include "../FreeRTOS_Source/include/timers.h"
+
 /* Includes */
 #include "rtos_hooks.h"
 #include "dd_scheduler.h"
 #include "string.h"
 #include "list.h"
+
 /*-----------------------------------------------------------*/
 
+// Task Prototypes
 static void prvSetupHardware( void );
 static void DD_Scheduler_Task( void *pvParameters );
 static void DD_Generator_Task( void *pvParameters );
 static void DD_Monitor_Task( void *pvParameters );
 
 /*-----------------------------------------------------------*/
+
+// User Task Space
 static void DD_User_Task1( void *pvParameters )
 {
 	while (1)
@@ -68,7 +75,6 @@ int main(void)
 	return 0;
 }
 
-
 /*-----------------------------------------------------------*/
 
 static void DD_Scheduler_Task( void *pvParameters )
@@ -78,7 +84,6 @@ static void DD_Scheduler_Task( void *pvParameters )
 
 	while(1)
 	{
-
 		if ( xQueueReceive( SchedulerQueue, &Received, (TickType_t) 1000 ) ) {
 
 			printf("Task Message: %d\n", Received.ID.MessageType);
@@ -117,13 +122,7 @@ static void DD_Scheduler_Task( void *pvParameters )
 					printf("nicelydone");
 				break;
 			}
-
-
-
 		}
-
-
-//		printf("HELLO WORLD");
 	}
 }
 
@@ -158,13 +157,9 @@ static void DD_Monitor_Task( void *pvParameters )
 }
 
 /*-----------------------------------------------------------*/
-// Necessary misc functions
+
+// Necessary for linker
 static void prvSetupHardware( void )
 {
-	/* Ensure all priority bits are assigned as preemption priority bits.
-	http://www.freertos.org/RTOS-Cortex-M3-M4.html */
 	NVIC_SetPriorityGrouping( 0 );
-
-	/* TODO: Setup the clocks, etc. here, if they were not configured before
-	main() was called. */
 }

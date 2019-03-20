@@ -5,26 +5,13 @@
  *      Author: mdellavi
  */
 
-
+/* Includes */
 #include "dd_scheduler.h"
 
 /*-----------------------------------------------------------*/
 
-//hi
-
-/*-----------------------------------------------------------*/
-
-TaskHandle_t dd_tcreate(Task_param_s param){
-	/*
-	 * open a queue
-	 * create min priority task give task params
-	 * create a task message and send to scheduler
-	 * wait for reply at q
-	 * take reply
-	 * destroy q
-	 * return null or task handle
-	 */
-	// Variables
+TaskHandle_t dd_tcreate(Task_param_s param)
+{
 	extern QueueHandle_t ReplyQueue;
 	extern QueueHandle_t SchedulerQueue;
 
@@ -61,7 +48,7 @@ TaskHandle_t dd_tcreate(Task_param_s param){
 
 	// Wait for reply @ queue
 	while ( xQueueReceive( ReplyQueue, &Message, 0 ) != pdTRUE) {;}
-		// Received message, delete queue
+	// Received message, delete queue
 	vQueueDelete( ReplyQueue );
 	ReplyQueue = NULL;
 
@@ -69,16 +56,8 @@ TaskHandle_t dd_tcreate(Task_param_s param){
 
 }
 
-uint32_t dd_delete(TaskHandle_t TaskHandle){
-	/*
-	 * open a queue
-	 * delete task handle
-	 * create task delete message send to scheduler
-	 * wait for reply
-	 * take reply
-	 * destroy q
-	 * return
-	 */
+uint32_t dd_delete(TaskHandle_t TaskHandle)
+{
 	extern QueueHandle_t ReplyQueue;
 	extern QueueHandle_t SchedulerQueue;
 	DD_message Message;
@@ -113,15 +92,8 @@ uint32_t dd_delete(TaskHandle_t TaskHandle){
 	return Message.DeleteResponse.retval;
 }
 
-uint32_t dd_return_active_list(const TaskList *list){
-	/*
-	 *	open a queue
-	 *	create task list request message
-	 *	wait for reply
-	 *	take reply
-	 *	destroy q
-	 *	return
-	 */
+uint32_t dd_return_active_list(const TaskList *list)
+{
 	extern QueueHandle_t ReplyQueue;
 	extern QueueHandle_t SchedulerQueue;
 	DD_message Message;
@@ -153,15 +125,8 @@ uint32_t dd_return_active_list(const TaskList *list){
 	return 0;
 }
 
-uint32_t dd_return_overdue_list(const TaskList *list){
-	/*
-	 *	open a queue
-	 *	create task list request message
-	 *	wait for reply
-	 *	take reply
-	 *	destroy q
-	 *	return
-	 */
+uint32_t dd_return_overdue_list(const TaskList *list)
+{
 	extern QueueHandle_t ReplyQueue;
 	extern QueueHandle_t SchedulerQueue;
 	DD_message Message;

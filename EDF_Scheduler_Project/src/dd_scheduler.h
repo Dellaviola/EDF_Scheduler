@@ -19,9 +19,11 @@
 #include "../FreeRTOS_Source/include/semphr.h"
 #include "../FreeRTOS_Source/include/task.h"
 #include "../FreeRTOS_Source/include/timers.h"
-
+/* Program Includes */
 #include "list.h"
+
 /*-----------------------------------------------------------*/
+
 typedef struct Task_param_s{
 
 	TickType_t deadline;
@@ -82,6 +84,7 @@ typedef struct Task_request_response{
 	TaskList* List;
 
 }Task_request_response;
+
 typedef struct ID_message{
 
 	MessageType_t MessageType;
@@ -101,14 +104,13 @@ typedef union DD_Message{
 }DD_message;
 
 /*-----------------------------------------------------------*/
+
 // Global scheduler queue
 xQueueHandle SchedulerQueue;
 xQueueHandle ReplyQueue;
 
-
-
-
 /*-----------------------------------------------------------*/
+
 TaskHandle_t dd_tcreate(Task_param_s);
 uint32_t dd_delete(TaskHandle_t);
 uint32_t dd_return_active_list(const TaskList*);
