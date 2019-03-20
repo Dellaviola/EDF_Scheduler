@@ -39,8 +39,8 @@ TaskHandle_t dd_tcreate(Task_param_s param)
 
 	// Create message struct
 	Message.CreateMessage.MessageType = CREATE;
-	Message.CreateMessage.Deadline = param.deadlinetick;
-	Message.CreateMessage.TaskHandle = TaskHandle;
+	Message.CreateMessage.Deadline = param.deadline;
+	Message.CreateMessage.TaskHandle = param.task;
 	Message.CreateMessage.ReplyQueue = ReplyQueue;
 
 	// Send message struct to scheduler
@@ -56,7 +56,7 @@ TaskHandle_t dd_tcreate(Task_param_s param)
 
 }
 
-void dd_delete(TaskHandle_t TaskHandle)
+uint32_t dd_delete(TaskHandle_t TaskHandle)
 {
 	extern QueueHandle_t ReplyQueue;
 	extern QueueHandle_t SchedulerQueue;
@@ -66,7 +66,6 @@ void dd_delete(TaskHandle_t TaskHandle)
 	if (ReplyQueue == NULL)
 	{
 		ReplyQueue = xQueueCreate(1,sizeof(DD_message));
-		vQueueAddToRegistry( ReplyQueue, "ReplyQueue" );
 	}
 	else
 	{
@@ -74,7 +73,7 @@ void dd_delete(TaskHandle_t TaskHandle)
 	}
 
 	// Delete task
-
+	vTaskDelete( TaskHandle );
 
 	// Create message struct
 	Message.DeleteMessage.MessageType = DELETE;
@@ -89,7 +88,8 @@ void dd_delete(TaskHandle_t TaskHandle)
 		// Received message, delete queue
 	vQueueDelete( ReplyQueue );
 	ReplyQueue = NULL;
-	vTaskDelete(NULL);
+	printf("Deleted Task, returning %d\n", Message.DeleteResponse.retval);
+	return Message.DeleteResponse.retval;
 }
 
 uint32_t dd_return_active_list(const TaskList *list)
@@ -102,7 +102,6 @@ uint32_t dd_return_active_list(const TaskList *list)
 	if (ReplyQueue == NULL)
 	{
 		ReplyQueue = xQueueCreate(1,sizeof(DD_message));
-		vQueueAddToRegistry( ReplyQueue, "ReplyQueue" );
 	}
 	else
 	{
@@ -122,7 +121,7 @@ uint32_t dd_return_active_list(const TaskList *list)
 		// Received message, delete queue
 	vQueueDelete( ReplyQueue );
 	ReplyQueue = NULL;
-	list = Message.TaskListResponse.List;
+
 	return 0;
 }
 
@@ -155,7 +154,6 @@ uint32_t dd_return_overdue_list(const TaskList *list)
 		// Received message, delete queue
 	vQueueDelete( ReplyQueue );
 	ReplyQueue = NULL;
-	list = Message.TaskListResponse.List;
 
 	return 0;
 }

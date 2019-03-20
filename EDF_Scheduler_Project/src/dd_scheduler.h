@@ -29,7 +29,7 @@ typedef struct Task_param_s{
 	TickType_t deadline;
 	TickType_t deadlinetick;
 	TaskFunction_t task;
-	char name[10];
+	char name[20];
 
 }Task_param_s;
 
@@ -110,10 +110,14 @@ typedef union DD_Message{
 xQueueHandle SchedulerQueue;
 xQueueHandle ReplyQueue;
 
+// Timer Handle
+
+TimerHandle_t xTimers[5];
+
 /*-----------------------------------------------------------*/
 
 TaskHandle_t dd_tcreate(Task_param_s);
-uint32_t dd_delete(TaskHandle_t);
+void dd_delete(TaskHandle_t);
 uint32_t dd_return_active_list(const TaskList*);
 uint32_t dd_return_overdue_list(const TaskList*);
 

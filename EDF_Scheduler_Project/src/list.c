@@ -16,9 +16,11 @@ void list_add(TaskList * list, TaskHandle_t TaskHandle, TickType_t Deadline)
 
 	TaskList * temp = list;
 	TaskList * node = malloc(sizeof(TaskList));
+	node->Handle = TaskHandle;
+	node->Deadline = Deadline;
 
 	// Case: empty
-	if ((temp->Next == NULL) && (list_size(temp) == 0)) //TODO: fixme
+	if (temp->Handle == NULL) //TODO: fixme
 	{
 		list->Deadline = Deadline;
 		list->Handle = TaskHandle;
@@ -33,7 +35,7 @@ void list_add(TaskList * list, TaskHandle_t TaskHandle, TickType_t Deadline)
 		node->Next = list;
 		list = node;
 	}
-	else while (temp->Next)
+	else while (temp)
 	{
 		//Case: General
 		if (temp->Next->Deadline > Deadline)
@@ -64,11 +66,12 @@ void list_remove(TaskList * list, TaskHandle_t TaskHandle)
 		while(1){;} //empty list access
 	}
 	//Case: remove first item
-	if(temp->Handle == TaskHandle)
+	if(temp->Handle == TaskHandle) //TODO: this doesnt reassign param->active...
 	{
-		list = temp->Next;
-		temp->Next = NULL;
-		free(temp);
+		TaskNode * temp2 = temp->Next;
+		*list = *temp->Next;
+		free(temp2);
+
 	}
 	// Case:  General
 	else while (temp->Next)

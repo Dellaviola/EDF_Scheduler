@@ -20,16 +20,12 @@
 #include "../FreeRTOS_Source/include/semphr.h"
 #include "../FreeRTOS_Source/include/task.h"
 #include "../FreeRTOS_Source/include/timers.h"
-#include "../FreeRTOS_Source/include/event_groups.h"
 
 /* Includes */
 #include "rtos_hooks.h"
 #include "dd_scheduler.h"
 #include "string.h"
 #include "list.h"
-#include "dd_callback.h"
-#include "middleware.h"
-
 
 /*-----------------------------------------------------------*/
 
@@ -42,24 +38,13 @@ static void DD_Monitor_Task( void *pvParameters );
 /*-----------------------------------------------------------*/
 
 // User Task Space
-static void User_Periodic( void *pvParameters )
+static void DD_User_Task1( void *pvParameters )
 {
 	while (1)
 	{
 		printf("User Task 1\n");
-		vTaskDelay(pdMS_TO_TICKS(1000));
-		TaskHandle_t x = xTaskGetCurrentTaskHandle();
-		dd_delete(x);
-	}
-}
-static void User_Random( void *pvParameters )
-{
-	while (1)
-	{
-		printf("User Task 1\n");
-		vTaskDelay(pdMS_TO_TICKS(1000));
-		TaskHandle_t x = xTaskGetCurrentTaskHandle();
-		dd_delete(x);
+		vTaskDelay(1000);
+		dd_delete(xTaskGetCurrentTaskHandle());
 	}
 }
 
@@ -76,8 +61,6 @@ int main(void)
 	SchedulerQueue = xQueueCreate( 8, sizeof(DD_message) );
 	vQueueAddToRegistry( SchedulerQueue, "SchedulerQueue" );
 
-
-
 	// Create Lists
 	static TaskList *ActiveList;
 	static TaskList *OverdueList;
@@ -87,8 +70,6 @@ int main(void)
 
 	ActiveList->Next = NULL;
 	OverdueList->Next = NULL;
-	ActiveList->Handle = NULL;
-	OverdueList->Handle = NULL;
 
 	static ListContainer container;
 	container.Active = ActiveList;
@@ -96,13 +77,10 @@ int main(void)
 
 	// Max List Size = 28
 
-	// Create Timers
-	xTimers[0] = xTimerCreate("PeriodicTask", pdMS_TO_TICKS(2000), pdFALSE, (void *) 0, vPeriodicCallback);
-
 	// Create Tasks
 	xTaskCreate( DD_Scheduler_Task, "Scheduler", configMINIMAL_STACK_SIZE, &container, 30, NULL);
 	xTaskCreate( DD_Generator_Task, "Generator", configMINIMAL_STACK_SIZE, NULL, 29, NULL);
-	xTaskCreate( DD_Monitor_Task, "Monitor", configMINIMAL_STACK_SIZE, &container, 0, NULL);
+	xTaskCreate( DD_Monitor_Task, "Monitor", configMINIMAL_STACK_SIZE, &container, 1, NULL);
 
 
 	/* Start the tasks and timer running. */
@@ -133,7 +111,7 @@ static void DD_Scheduler_Task( void *pvParameters )
 
 					// Add it to Active List
 					list_add(param->Active, Received.CreateMessage.TaskHandle, Received.CreateMessage.Deadline);
-						// TODO: param active points to a freed space, need to move its pointer somehow.
+
 					// Create outgoing reply
 					Out.CreateResponse.MessageType = CREATE;
 					Out.CreateResponse.TaskHandle = Received.CreateMessage.TaskHandle;
@@ -142,10 +120,6 @@ static void DD_Scheduler_Task( void *pvParameters )
 
 				case(DELETE):
 					printf("Acknowledge Delete Request\n");
-
-					// Remove it from active list
-					list_remove(param->Active, Received.DeleteMessage.TaskHandle);
-
 					Out.DeleteResponse.MessageType = CREATE;
 					Out.DeleteResponse.retval = DELETE;
 					xQueueSend(Received.DeleteMessage.ReplyQueue, &Out, 1000);
@@ -154,14 +128,14 @@ static void DD_Scheduler_Task( void *pvParameters )
 				case(REQUEST_ACTIVE):
 					printf("Acknowledge Active List Request\n");
 					Out.TaskListResponse.MessageType = REQUEST_ACTIVE;
-					Out.TaskListResponse.List = param->Active;
+					Out.TaskListResponse.List = NULL;
 					xQueueSend(Received.RequestMessage.ReplyQueue, &Out, 1000);
 				break;
 
 				case(REQUEST_OVERDUE):
 					printf("Acknowledge Overdue List Request\n");
 					Out.TaskListResponse.MessageType = REQUEST_OVERDUE;
-					Out.TaskListResponse.List = param->Overdue;
+					Out.TaskListResponse.List = NULL;
 					xQueueSend(Received.RequestMessage.ReplyQueue, &Out, 1000);
 				break;
 
@@ -177,9 +151,11 @@ static void DD_Scheduler_Task( void *pvParameters )
 
 			// Update priorities
 			UBaseType_t i;
-			TaskList * temp = param->Active;
+			TaskList *temp = param->Active;
 			for (i = list_size(temp) + 1; i > 1; i--) {
+				//vTaskSuspend(temp->Handle);
 				vTaskPrioritySet( temp->Handle, i );
+				//vTaskResume(temp->Handle);
 				temp = temp->Next;
 			}
 		}
@@ -190,30 +166,16 @@ static void DD_Scheduler_Task( void *pvParameters )
 
 static void DD_Generator_Task( void *pvParameters )
 {
-	Task_param_s PeriodicTaskParam;
-
-	PeriodicTaskParam.deadline = pdMS_TO_TICKS(750);
-	PeriodicTaskParam.deadlinetick = xTaskGetTickCount() + PeriodicTaskParam.deadline;
-	strcpy(PeriodicTaskParam.name, "Periodic Instance");
-
-	Task_param_s RandomTaskParam;
-
-	RandomTaskParam.deadline = pdMS_TO_TICKS((rand() % 1000) + 100);
-	xTimerEvents = xEventGroupCreate();
-	EventBits_t EventBits;
-	if (xTimerEvents == NULL)
-	{
-
-	}
-	else
-	{
-		xTimerStart(xTimers[0], 0);
-	}
+	Task_param_s TaskParam;
 
 	while(1)
 	{
-
-
+		TaskParam.task = DD_User_Task1;
+		TaskParam.deadline = pdMS_TO_TICKS(100);
+		TaskParam.deadlinetick = xTaskGetTickCount() + TaskParam.deadline;
+		strcpy(TaskParam.name,"user");
+		TaskHandle_t x = dd_tcreate(TaskParam);
+		vTaskDelay(pdMS_TO_TICKS(1000));
 
 	}
 }
@@ -227,7 +189,7 @@ static void DD_Monitor_Task( void *pvParameters )
 
 	while(1)
 	{
-		printf("idling\n");
+		// Check Active List for any overdue tasks
 
 		// Message Scheduler to update the lists
 //		xQueueSend(blah blah);
