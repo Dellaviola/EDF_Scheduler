@@ -37,7 +37,8 @@ typedef enum {
 	CREATE,
 	DELETE,
 	REQUEST_ACTIVE,
-	REQUEST_OVERDUE
+	REQUEST_OVERDUE,
+	UPDATE_ACTIVE
 } MessageType_t;
 
 typedef struct Scheduler_request_message{
@@ -61,7 +62,7 @@ typedef struct Task_create_response{
 	MessageType_t MessageType;
 	TaskHandle_t TaskHandle;
 
-}Task_create_response;
+}Task_create_response, Update_active_request;
 
 typedef struct Task_delete_message{
 

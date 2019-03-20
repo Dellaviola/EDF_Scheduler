@@ -11,16 +11,6 @@
 
 /*-----------------------------------------------------------*/
 
-void list_init()
-{
-	ActiveList = malloc(sizeof(TaskList *));
-	OverdueList = malloc(sizeof(TaskList *));
-
-	ActiveList->Next = NULL;
-	OverdueList->Next = NULL;
-
-}
-
 void list_add(TaskList * list, TaskHandle_t TaskHandle, TickType_t Deadline)
 {
 
@@ -28,14 +18,14 @@ void list_add(TaskList * list, TaskHandle_t TaskHandle, TickType_t Deadline)
 	TaskList * node = malloc(sizeof(TaskList));
 
 	// Case: empty
-	if (temp->Next == NULL)
+	if ((temp->Next == NULL) && (list_size(temp) == 0)) //TODO: fixme
 	{
-		list->Next = node;
+		list->Deadline = Deadline;
+		list->Handle = TaskHandle;
+		list->Next = NULL;
+		list->TaskType = 0;
 
-		node->Deadline = Deadline;
-		node->Handle = TaskHandle;
-		node->Next = NULL;
-		node->TaskType = 0;
+		free(node);
 	}
 	// Case: new item has earliest deadline
 	else if (temp->Deadline > Deadline)
@@ -90,4 +80,20 @@ void list_remove(TaskList * list, TaskHandle_t TaskHandle)
 			free(temp2);
 		}
 	}
+}
+
+int list_size(TaskList * list)
+{
+	TaskList * temp = list;
+	int size = 0;
+
+	if (temp != NULL) size++;
+
+	while (temp->Next)
+	{
+		size++;
+		temp = temp->Next;
+	}
+
+	return size;
 }

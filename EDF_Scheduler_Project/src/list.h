@@ -31,11 +31,10 @@ typedef struct TaskList{
 
 }TaskList, TaskNode;
 
-/*-----------------------------------------------------------*/
-
-// Global Lists
-TaskList *ActiveList;
-TaskList *OverdueList;
+typedef struct ListContainer{
+	TaskList *Active;
+	TaskList *Overdue;
+}ListContainer;
 
 /*-----------------------------------------------------------*/
 
@@ -45,6 +44,6 @@ void list_add(TaskList *, TaskHandle_t, TickType_t);
 void list_remove(TaskList *, TaskHandle_t);
 void list_delete(TaskList *);
 
-void list_size(TaskList *);
+int list_size(TaskList *);
 
 #endif /* LIST_H_ */
