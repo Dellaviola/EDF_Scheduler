@@ -42,13 +42,20 @@ static void DD_Monitor_Task( void *pvParameters );
 /*-----------------------------------------------------------*/
 
 // User Task Space
-static void User_Periodic( void *pvParameters )
+static void User_Periodic( void * pvParameters )
 {
+	static uint32_t led = 0;
+	led++;
+	if (led == 4) led = 0;
+	uint32_t ledmemory = led;
+	(TickType_t) pvParameters;
+
 	while (1)
 	{
-		printf("User Task 1\n");
-		vTaskDelay(pdMS_TO_TICKS(1000));
+		STM_EVAL_LEDOn(ledmemory);
+		vTaskDelay(pvParameters);
 		TaskHandle_t x = xTaskGetCurrentTaskHandle();
+		STM_EVAL_LEDOff(ledmemory);
 		dd_delete(x);
 	}
 }
@@ -76,7 +83,8 @@ int main(void)
 	SchedulerQueue = xQueueCreate( 8, sizeof(DD_message) );
 	vQueueAddToRegistry( SchedulerQueue, "SchedulerQueue" );
 
-
+	// Init LEDS
+	DISCO_LED_INIT();
 
 	// Create Lists
 	static TaskList *ActiveList;
@@ -179,7 +187,7 @@ static void DD_Scheduler_Task( void *pvParameters )
 			UBaseType_t i;
 			TaskList * temp = param->Active;
 			for (i = list_size(temp) + 1; i > 1; i--) {
-				vTaskPrioritySet( temp->Handle, i );
+				if (temp->Handle) vTaskPrioritySet( temp->Handle, i );
 				temp = temp->Next;
 			}
 		}
@@ -192,6 +200,7 @@ static void DD_Generator_Task( void *pvParameters )
 {
 	Task_param_s PeriodicTaskParam;
 
+	PeriodicTaskParam.task = User_Periodic;
 	PeriodicTaskParam.deadline = pdMS_TO_TICKS(750);
 	PeriodicTaskParam.deadlinetick = xTaskGetTickCount() + PeriodicTaskParam.deadline;
 	strcpy(PeriodicTaskParam.name, "Periodic Instance");
@@ -199,6 +208,7 @@ static void DD_Generator_Task( void *pvParameters )
 	Task_param_s RandomTaskParam;
 
 	RandomTaskParam.deadline = pdMS_TO_TICKS((rand() % 1000) + 100);
+
 	xTimerEvents = xEventGroupCreate();
 	EventBits_t EventBits;
 	if (xTimerEvents == NULL)
@@ -213,7 +223,18 @@ static void DD_Generator_Task( void *pvParameters )
 	while(1)
 	{
 
+		EventBits = xEventGroupWaitBits(xTimerEvents, (1 << 0), pdTRUE, pdFALSE, pdMS_TO_TICKS(2000));
+		if ((EventBits & (1 << 0)) == (1 << 0))
+		{
+			dd_tcreate(PeriodicTaskParam);
+			xTimerStart(xTimers[0],0);
+		}
+		else
+		{
 
+		}
+
+		ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(2000));
 
 	}
 }
@@ -227,7 +248,7 @@ static void DD_Monitor_Task( void *pvParameters )
 
 	while(1)
 	{
-		printf("idling\n");
+		//printf("idling\n");
 
 		// Message Scheduler to update the lists
 //		xQueueSend(blah blah);

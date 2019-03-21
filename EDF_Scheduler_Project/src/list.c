@@ -66,12 +66,19 @@ void list_remove(TaskList * list, TaskHandle_t TaskHandle)
 		while(1){;} //empty list access
 	}
 	//Case: remove first item
-	if(temp->Handle == TaskHandle) //TODO: this doesnt reassign param->active...
+	if((temp->Handle == TaskHandle) && temp->Next) //TODO: this doesnt reassign param->active...
 	{
 		TaskNode * temp2 = temp->Next;
 		*list = *temp->Next;
 		free(temp2);
 
+	}
+	//Case: remove only item in the list, and reset thelist
+	else if (temp->Handle == TaskHandle)
+	{
+		free(list);
+		list->Next = 0;
+		list->Handle = 0;
 	}
 	// Case:  General
 	else while (temp->Next)

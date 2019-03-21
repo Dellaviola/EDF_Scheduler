@@ -30,7 +30,7 @@ TaskHandle_t dd_tcreate(Task_param_s param)
 
 	vQueueAddToRegistry( ReplyQueue, "ReplyQueue" );
 	// Create task
-	Returned = xTaskCreate( param.task, param.name, configMINIMAL_STACK_SIZE, NULL, 0, &TaskHandle);
+	Returned = xTaskCreate( param.task, param.name, configMINIMAL_STACK_SIZE, param.deadline, 0, &TaskHandle);
 
 	if ( Returned != pdPASS ) {
 		// Something went wrong with task creation
