@@ -19,6 +19,8 @@
 #include "../FreeRTOS_Source/include/task.h"
 #include "../FreeRTOS_Source/include/timers.h"
 
+#include "options.h"
+
 /*-----------------------------------------------------------*/
 
 typedef struct TaskList{

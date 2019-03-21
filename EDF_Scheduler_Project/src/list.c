@@ -20,14 +20,13 @@ void list_add(TaskList * list, TaskHandle_t TaskHandle, TickType_t Deadline)
 	node->Deadline = Deadline;
 
 	// Case: empty
-	if (temp->Handle == NULL) //TODO: fixme
+	if (temp->Handle == NULL)
 	{
+		free(node);
 		list->Deadline = Deadline;
 		list->Handle = TaskHandle;
 		list->Next = NULL;
 		list->TaskType = 0;
-
-		free(node);
 	}
 	// Case: new item has earliest deadline
 	else if (temp->Deadline > Deadline)
@@ -56,6 +55,7 @@ void list_add(TaskList * list, TaskHandle_t TaskHandle, TickType_t Deadline)
 		// Increment otherwise
 		temp = temp->Next;
 	}
+	return;
 }
 void list_remove(TaskList * list, TaskHandle_t TaskHandle)
 {
@@ -66,7 +66,7 @@ void list_remove(TaskList * list, TaskHandle_t TaskHandle)
 		while(1){;} //empty list access
 	}
 	//Case: remove first item
-	if((temp->Handle == TaskHandle) && temp->Next) //TODO: this doesnt reassign param->active...
+	if((temp->Handle == TaskHandle) && temp->Next)
 	{
 		TaskNode * temp2 = temp->Next;
 		*list = *temp->Next;
@@ -76,9 +76,11 @@ void list_remove(TaskList * list, TaskHandle_t TaskHandle)
 	//Case: remove only item in the list, and reset thelist
 	else if (temp->Handle == TaskHandle)
 	{
-		free(list);
+
 		list->Next = 0;
 		list->Handle = 0;
+		free(temp);
+
 	}
 	// Case:  General
 	else while (temp->Next)
@@ -89,7 +91,9 @@ void list_remove(TaskList * list, TaskHandle_t TaskHandle)
 			temp->Next = temp2->Next;
 			free(temp2);
 		}
+		temp = temp->Next;
 	}
+	return;
 }
 
 int list_size(TaskList * list)

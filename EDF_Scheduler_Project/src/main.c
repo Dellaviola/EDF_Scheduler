@@ -29,6 +29,7 @@
 #include "list.h"
 #include "dd_callback.h"
 #include "middleware.h"
+#include "options.h"
 
 
 /*-----------------------------------------------------------*/
@@ -38,6 +39,9 @@ static void prvSetupHardware( void );
 static void DD_Scheduler_Task( void *pvParameters );
 static void DD_Generator_Task( void *pvParameters );
 static void DD_Monitor_Task( void *pvParameters );
+//static void vInterrupt_Handler_Task(void *pvParameters);
+
+//static TaskHandle_t Interrupt;
 
 /*-----------------------------------------------------------*/
 
@@ -48,12 +52,12 @@ static void User_Periodic( void * pvParameters )
 	led++;
 	if (led == 4) led = 0;
 	uint32_t ledmemory = led;
-	(TickType_t) pvParameters;
+	TickType_t xLastWakeTime = xTaskGetTickCount();
 
 	while (1)
 	{
 		STM_EVAL_LEDOn(ledmemory);
-		vTaskDelay(pvParameters);
+		vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS((TickType_t) pvParameters));
 		TaskHandle_t x = xTaskGetCurrentTaskHandle();
 		STM_EVAL_LEDOff(ledmemory);
 		dd_delete(x);
@@ -61,10 +65,12 @@ static void User_Periodic( void * pvParameters )
 }
 static void User_Random( void *pvParameters )
 {
+	TickType_t xLastWakeTime = xTaskGetTickCount();
+	static uint16_t count = 0;
 	while (1)
 	{
-		printf("User Task 1\n");
-		vTaskDelay(pdMS_TO_TICKS(1000));
+		printf("%u: Push Button Pressed!\n", count++);
+		vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS((TickType_t) pvParameters));
 		TaskHandle_t x = xTaskGetCurrentTaskHandle();
 		dd_delete(x);
 	}
@@ -103,15 +109,20 @@ int main(void)
 	container.Active = ActiveList;
 	container.Overdue = OverdueList;
 
-	// Max List Size = 28
+	// Create Mutex
+//	xReplyMutex = xSemaphoreCreateMutex();
+//	xSemaphoreGive(xReplyMutex);
+//	vQueueAddToRegistry( xReplyMutex, "Reply Mutex" );
 
 	// Create Timers
 	xTimers[0] = xTimerCreate("PeriodicTask", pdMS_TO_TICKS(2000), pdFALSE, (void *) 0, vPeriodicCallback);
+	xTimers[1] = xTimerCreate("Debounce", pdMS_TO_TICKS(50), pdTRUE, (void *) 0, vDebounce);
 
 	// Create Tasks
 	xTaskCreate( DD_Scheduler_Task, "Scheduler", configMINIMAL_STACK_SIZE, &container, 30, NULL);
 	xTaskCreate( DD_Generator_Task, "Generator", configMINIMAL_STACK_SIZE, NULL, 29, NULL);
 	xTaskCreate( DD_Monitor_Task, "Monitor", configMINIMAL_STACK_SIZE, &container, 0, NULL);
+	//xTaskCreate( vInterrupt_Handler_Task, "Interrupt", configMINIMAL_STACK_SIZE, NULL, 31, &Interrupt);
 
 
 	/* Start the tasks and timer running. */
@@ -131,44 +142,47 @@ static void DD_Scheduler_Task( void *pvParameters )
 
 	while(1)
 	{
-		if ( xQueueReceive( SchedulerQueue, &Received, (TickType_t) 10 ) ) {
+		if ( xQueueReceive( SchedulerQueue, &Received, 1000 ) ) {
 
-			printf("Task Message: %d\n", Received.ID.MessageType);
+			DPRINTF("Task Message: %d\n", Received.ID.MessageType);
 
 			switch(Received.ID.MessageType)
 			{
 				case(CREATE):
-					printf("Acknowledge Create Request\n");
+					DPRINTF("Acknowledge Create Request\n");
 
 					// Add it to Active List
 					list_add(param->Active, Received.CreateMessage.TaskHandle, Received.CreateMessage.Deadline);
-						// TODO: param active points to a freed space, need to move its pointer somehow.
-					// Create outgoing reply
+
 					Out.CreateResponse.MessageType = CREATE;
 					Out.CreateResponse.TaskHandle = Received.CreateMessage.TaskHandle;
+
 					xQueueSend(Received.CreateMessage.ReplyQueue, &Out, 1000);
-				break;
+
+					break;
 
 				case(DELETE):
-					printf("Acknowledge Delete Request\n");
+					DPRINTF("Acknowledge Delete Request\n");
 
 					// Remove it from active list
 					list_remove(param->Active, Received.DeleteMessage.TaskHandle);
 
 					Out.DeleteResponse.MessageType = CREATE;
 					Out.DeleteResponse.retval = DELETE;
+
 					xQueueSend(Received.DeleteMessage.ReplyQueue, &Out, 1000);
-				break;
+
+					break;
 
 				case(REQUEST_ACTIVE):
-					printf("Acknowledge Active List Request\n");
+					DPRINTF("Acknowledge Active List Request\n");
 					Out.TaskListResponse.MessageType = REQUEST_ACTIVE;
 					Out.TaskListResponse.List = param->Active;
 					xQueueSend(Received.RequestMessage.ReplyQueue, &Out, 1000);
 				break;
 
 				case(REQUEST_OVERDUE):
-					printf("Acknowledge Overdue List Request\n");
+					DPRINTF("Acknowledge Overdue List Request\n");
 					Out.TaskListResponse.MessageType = REQUEST_OVERDUE;
 					Out.TaskListResponse.List = param->Overdue;
 					xQueueSend(Received.RequestMessage.ReplyQueue, &Out, 1000);
@@ -203,12 +217,12 @@ static void DD_Generator_Task( void *pvParameters )
 
 	PeriodicTaskParam.task = User_Periodic;
 	PeriodicTaskParam.deadline = pdMS_TO_TICKS(750);
-	PeriodicTaskParam.deadlinetick = xTaskGetTickCount() + PeriodicTaskParam.deadline;
 	strcpy(PeriodicTaskParam.name, "Periodic Instance");
 
 	Task_param_s RandomTaskParam;
 
-	RandomTaskParam.deadline = pdMS_TO_TICKS((rand() % 1000) + 100);
+	RandomTaskParam.task = User_Random;
+	strcpy(RandomTaskParam.name, "Random Instance");
 
 	xTimerEvents = xEventGroupCreate();
 	EventBits_t EventBits;
@@ -219,23 +233,31 @@ static void DD_Generator_Task( void *pvParameters )
 	else
 	{
 		xTimerStart(xTimers[0], 0);
+		xTimerStart(xTimers[1], 0);
 	}
 
 	while(1)
 	{
 
-		EventBits = xEventGroupWaitBits(xTimerEvents, (1 << 0), pdTRUE, pdFALSE, pdMS_TO_TICKS(2000));
+		EventBits = xEventGroupWaitBits(xTimerEvents, (1 << 0) | (1 << 1), pdTRUE, pdFALSE, pdMS_TO_TICKS(10000));
 		if ((EventBits & (1 << 0)) == (1 << 0))
 		{
+			PeriodicTaskParam.deadlinetick = (xTaskGetTickCount() + PeriodicTaskParam.deadline);
 			dd_tcreate(PeriodicTaskParam);
 			xTimerStart(xTimers[0],0);
 		}
+		else if ((EventBits & (1 << 1)) == (1 << 1))
+		{
+			RandomTaskParam.deadline = pdMS_TO_TICKS((rand() % 5000) + 5000);
+			RandomTaskParam.deadlinetick = (xTaskGetTickCount() + RandomTaskParam.deadline);
+			dd_tcreate(RandomTaskParam);
+		}
 		else
 		{
-
+			DPRINTF("Generator unblocking for error checking\n");
 		}
 
-		ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(2000));
+		//ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(2000));
 
 	}
 }
@@ -257,6 +279,47 @@ static void DD_Monitor_Task( void *pvParameters )
 		// Check system usage, etc.
 	}
 }
+
+/*-----------------------------------------------------------*/
+
+//void EXTI0_IRQHandler(void)
+//{
+//    // Checks whether the interrupt from EXTI0 or not
+//    if (EXTI_GetITStatus(EXTI_Line0))
+//    {
+//
+//    	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+//    	vTaskNotifyGiveFromISR(Interrupt, &xHigherPriorityTaskWoken);
+//
+//    	// Clears the EXTI line pending bit
+//        EXTI_ClearITPendingBit(EXTI_Line0);
+//        portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+//    }
+//}
+//
+//static void vInterrupt_Handler_Task(void *pvParameters)
+//{
+//
+//	uint32_t ulTaskNotification = 0;
+//
+//		while(1)
+//		{
+//			ulTaskNotification = ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(5000));
+//			vTaskDelay(pdMS_TO_TICKS(50));
+//			if (ulTaskNotification == 0){
+//				DPRINTF("ISR CHECK\n");
+//			}
+//			else if (STM_EVAL_PBGetState(BUTTON_USER))
+//			{
+//				xEventGroupSetBits(xTimerEvents, (1 << 1));
+//			}
+//			else
+//			{
+//				DPRINTF("Spurious Interrupt");
+//			}
+//		}
+//
+//}
 
 /*-----------------------------------------------------------*/
 

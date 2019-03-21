@@ -21,9 +21,12 @@
 #include "../FreeRTOS_Source/include/timers.h"
 #include "../FreeRTOS_Source/include/event_groups.h"
 
+#include "options.h"
+
 EventGroupHandle_t xTimerEvents;
 
 void vPeriodicCallback(void* arg);
+void vDebounce(void* arg);
 
 
 

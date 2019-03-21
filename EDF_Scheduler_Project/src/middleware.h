@@ -14,7 +14,7 @@
 /* Kernel includes. */
 #include "stm32f4xx.h"
 #include "../Libraries/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_gpio.h"
-
+#include "options.h"
 
 #define amber  	0
 #define green  	1
@@ -28,4 +28,5 @@
 
 void DISCO_LED_INIT(void);
 void DISCO_BUTTON_INIT(void);
+
 #endif /* MIDDLEWARE_H_ */

@@ -21,6 +21,7 @@
 #include "../FreeRTOS_Source/include/timers.h"
 /* Program Includes */
 #include "list.h"
+#include "options.h"
 
 /*-----------------------------------------------------------*/
 
@@ -108,11 +109,17 @@ typedef union DD_Message{
 
 // Global scheduler queue
 xQueueHandle SchedulerQueue;
-xQueueHandle ReplyQueue;
+xQueueHandle CreateReplyQueue;
+xQueueHandle DeleteReplyQueue;
+xQueueHandle ActiveReplyQueue;
+xQueueHandle OverdueReplyQueue;
 
 // Timer Handle
 
 TimerHandle_t xTimers[5];
+
+// Mutex
+SemaphoreHandle_t xReplyMutex;
 
 /*-----------------------------------------------------------*/
 
