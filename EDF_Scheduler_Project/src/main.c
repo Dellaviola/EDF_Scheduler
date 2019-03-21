@@ -85,6 +85,7 @@ int main(void)
 
 	// Init LEDS
 	DISCO_LED_INIT();
+	DISCO_BUTTON_INIT();
 
 	// Create Lists
 	static TaskList *ActiveList;

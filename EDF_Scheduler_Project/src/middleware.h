@@ -27,5 +27,5 @@
 #define blue_led	LED6
 
 void DISCO_LED_INIT(void);
-
+void DISCO_BUTTON_INIT(void);
 #endif /* MIDDLEWARE_H_ */

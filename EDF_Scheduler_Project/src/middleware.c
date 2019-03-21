@@ -18,3 +18,8 @@ void DISCO_LED_INIT()
 	STM_EVAL_LEDInit(blue_led);
 	return;
 }
+
+void DISCO_BUTTON_INIT()
+{
+	STM_EVAL_PBInit(BUTTON_USER, BUTTON_MODE_EXTI);
+}
