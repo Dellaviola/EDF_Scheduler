@@ -30,7 +30,7 @@ typedef struct Task_param_s{
 	TickType_t deadline;
 	TickType_t deadlinetick;
 	TaskFunction_t task;
-	char name[20];
+	char name[64];
 
 }Task_param_s;
 
@@ -119,7 +119,7 @@ xQueueHandle OverdueReplyQueue;
 TimerHandle_t xTimers[5];
 
 // Mutex
-SemaphoreHandle_t xReplyMutex;
+SemaphoreHandle_t xFunctionMutex;
 
 /*-----------------------------------------------------------*/
 

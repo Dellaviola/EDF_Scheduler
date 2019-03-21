@@ -110,9 +110,9 @@ int main(void)
 	container.Overdue = OverdueList;
 
 	// Create Mutex
-//	xReplyMutex = xSemaphoreCreateMutex();
-//	xSemaphoreGive(xReplyMutex);
-//	vQueueAddToRegistry( xReplyMutex, "Reply Mutex" );
+	xFunctionMutex = xSemaphoreCreateMutex();
+	xSemaphoreGive(xFunctionMutex);
+	vQueueAddToRegistry( xFunctionMutex, "Function Mutex" );
 
 	// Create Timers
 	xTimers[0] = xTimerCreate("PeriodicTask", pdMS_TO_TICKS(2000), pdFALSE, (void *) 0, vPeriodicCallback);
@@ -201,9 +201,16 @@ static void DD_Scheduler_Task( void *pvParameters )
 			// Update priorities
 			UBaseType_t i;
 			TaskList * temp = param->Active;
-			for (i = list_size(temp) + 1; i > 1; i--) {
+			i = list_size(temp);
+			if (i > 27) i = 27;
+			for (i + 1; i > 1; i--) {
 				if (temp->Handle) vTaskPrioritySet( temp->Handle, i );
 				temp = temp->Next;
+				if((i == 1) && temp)
+				{
+					if (temp->Handle) vTaskPrioritySet( temp->Handle, i );
+					temp = temp->Next;
+				}
 			}
 		}
 	}
