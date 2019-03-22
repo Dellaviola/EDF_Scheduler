@@ -114,6 +114,8 @@ xQueueHandle DeleteReplyQueue;
 xQueueHandle ActiveReplyQueue;
 xQueueHandle OverdueReplyQueue;
 
+xQueueHandle SingleReplyQueue;
+
 // Timer Handle
 
 TimerHandle_t xTimers[5];

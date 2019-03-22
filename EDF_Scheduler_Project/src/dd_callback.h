@@ -27,6 +27,8 @@ EventGroupHandle_t xTimerEvents;
 
 void vPeriodicCallback(void* arg);
 void vDebounce(void* arg);
+void vDeadlineCallback(void* arg);
+void vListCallback(void* arg);
 
 
 

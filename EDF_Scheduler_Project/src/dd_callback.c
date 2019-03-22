@@ -6,6 +6,7 @@
  */
 
 #include "dd_callback.h"
+#include "dd_scheduler.h"
 
 void vPeriodicCallback(void* arg)
 {
@@ -37,4 +38,15 @@ void vDebounce(void* arg)
 		debounce = 0;
 		state = 0;
 	}
+}
+
+void vDeadlineCallback(void* arg)
+{
+	// If this callback is called, tell scheduler to delete task.
+
+}
+
+void vListCallback(void* arg)
+{
+	//
 }

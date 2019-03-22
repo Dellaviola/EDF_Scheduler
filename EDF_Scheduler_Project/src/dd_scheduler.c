@@ -12,46 +12,49 @@
 
 TaskHandle_t dd_tcreate(Task_param_s param)
 {
-	extern QueueHandle_t CreateReplyQueue;
+	extern QueueHandle_t SingleReplyQueue;
 	extern QueueHandle_t SchedulerQueue;
 
 	TaskHandle_t TaskHandle;
 	BaseType_t Returned;
 	DD_message Message;
-
-	if (CreateReplyQueue == NULL)
+	if(xSemaphoreTake(xReplyMutex, portMAX_DELAY) == pdTRUE)
 	{
-		CreateReplyQueue = xQueueCreate(1,sizeof(DD_message));
-		vQueueAddToRegistry( CreateReplyQueue, "CreateReplyQueue" );
+		if (SingleReplyQueue == NULL)
+		{
+			SingleReplyQueue = xQueueCreate(1,sizeof(DD_message));
+			vQueueAddToRegistry( SingleReplyQueue, "SingleReplyQueue" );
+		}
+		else
+		{
+			printf("Shouldn't be here");
+		}
+
+		// Create task
+		Returned = xTaskCreate( param.task, param.name, configMINIMAL_STACK_SIZE,(TickType_t) param.deadline, 0, &TaskHandle);
+
+		if ( Returned != pdPASS ) {
+			// Something went wrong with task creation
+			return NULL;
+		}
+
+		// Create message struct
+		Message.CreateMessage.MessageType = CREATE;
+		Message.CreateMessage.Deadline = param.deadlinetick;
+		Message.CreateMessage.TaskHandle = TaskHandle;
+		Message.CreateMessage.ReplyQueue = SingleReplyQueue;
+
+
+		// Send message struct to scheduler
+		if (xQueueSend( SchedulerQueue, &Message, portMAX_DELAY ) != pdTRUE) DPRINTF("Scheduler Queue Error\n") ;
+		// Wait for reply @ queue
+		while ( xQueueReceive( SingleReplyQueue, &Message, portMAX_DELAY ) != pdTRUE) {;}
+
+		// Received message, delete queue
+		vQueueDelete( SingleReplyQueue );
+		SingleReplyQueue = NULL;
+		xSemaphoreGive(xReplyMutex);
 	}
-	else
-	{
-		printf("Shouldn't be here");
-	}
-
-	// Create task
-	Returned = xTaskCreate( param.task, param.name, configMINIMAL_STACK_SIZE,(TickType_t) param.deadline, 0, &TaskHandle);
-
-	if ( Returned != pdPASS ) {
-		// Something went wrong with task creation
-		return NULL;
-	}
-
-	// Create message struct
-	Message.CreateMessage.MessageType = CREATE;
-	Message.CreateMessage.Deadline = param.deadlinetick;
-	Message.CreateMessage.TaskHandle = TaskHandle;
-	Message.CreateMessage.ReplyQueue = CreateReplyQueue;
-
-	// Send message struct to scheduler
-	if (xQueueSend( SchedulerQueue, &Message, portMAX_DELAY ) != pdTRUE) DPRINTF("Scheduler Queue Error\n") ;
-
-	// Wait for reply @ queue
-	while ( xQueueReceive( CreateReplyQueue, &Message, portMAX_DELAY ) != pdTRUE) {;}
-
-	// Received message, delete queue
-	vQueueDelete( CreateReplyQueue );
-	CreateReplyQueue = NULL;
 
 	return TaskHandle;
 
@@ -59,73 +62,91 @@ TaskHandle_t dd_tcreate(Task_param_s param)
 
 void dd_delete(TaskHandle_t TaskHandle)
 {
-	extern QueueHandle_t DeleteReplyQueue;
+	extern QueueHandle_t SingleReplyQueue;
 	extern QueueHandle_t SchedulerQueue;
 	DD_message Message;
 
-	// Create queue
-	if (DeleteReplyQueue == NULL)
+	if(xSemaphoreTake(xReplyMutex, portMAX_DELAY) == pdTRUE)
 	{
-		DeleteReplyQueue = xQueueCreate(1,sizeof(DD_message));
-		vQueueAddToRegistry( DeleteReplyQueue, "DeleteReplyQueue" );
+		// Create queue
+		if (SingleReplyQueue == NULL)
+		{
+			SingleReplyQueue = xQueueCreate(1,sizeof(DD_message));
+			vQueueAddToRegistry( SingleReplyQueue, "DeleteReplyQueue" );
+		}
+		else
+		{
+			printf("Shouldn't be here");
+		}
+
+		// Delete task
+
+
+		// Create message struct
+		Message.DeleteMessage.MessageType = DELETE;
+		Message.DeleteMessage.ReplyQueue = SingleReplyQueue;
+		Message.DeleteMessage.TaskHandle = TaskHandle;
+
+		// Send message struct to scheduler
+
+
+		// Send message struct to scheduler
+		if (xQueueSend( SchedulerQueue, &Message, portMAX_DELAY ) != pdTRUE) DPRINTF("Scheduler Queue Error\n") ;
+
+		// Wait for reply @ queue
+		while ( xQueueReceive( SingleReplyQueue, &Message, portMAX_DELAY ) != pdTRUE) {;}
+
+		// Received message, delete queue
+		vQueueDelete( SingleReplyQueue );
+		SingleReplyQueue = NULL;
+		xSemaphoreGive(xReplyMutex);
 	}
-	else
-	{
-		printf("Shouldn't be here");
-	}
-
-	// Delete task
-
-
-	// Create message struct
-	Message.DeleteMessage.MessageType = DELETE;
-	Message.DeleteMessage.ReplyQueue = DeleteReplyQueue;
-	Message.DeleteMessage.TaskHandle = TaskHandle;
-
-	// Send message struct to scheduler
-	if (xQueueSend( SchedulerQueue, &Message, portMAX_DELAY ) != pdTRUE) DPRINTF("Scheduler Queue Error\n") ;
-
-	// Wait for reply @ queue
-	while ( xQueueReceive( DeleteReplyQueue, &Message, portMAX_DELAY ) != pdTRUE) {;}
-
-	// Received message, delete queue
-	vQueueDelete( DeleteReplyQueue );
-	DeleteReplyQueue = NULL;
 	vTaskDelete(NULL);
 	return;
 }
 
-uint32_t dd_return_active_list(const TaskList *list)
+uint32_t dd_return_active_list(const TaskList * list)
 {
-	extern QueueHandle_t ReplyQueue;
+	extern QueueHandle_t SingleReplyQueue;
 	extern QueueHandle_t SchedulerQueue;
 	DD_message Message;
+	char retarray[100];
 
-	// Create queue
-	if (ReplyQueue == NULL)
+	if(xSemaphoreTake(xReplyMutex, portMAX_DELAY) == pdTRUE)
 	{
-		ReplyQueue = xQueueCreate(1,sizeof(DD_message));
-		vQueueAddToRegistry( ReplyQueue, "ReplyQueue" );
-	}
-	else
-	{
-		printf("Shouldn't be here");
-		return 1;
-	}
+		// Create queue
+		if (SingleReplyQueue == NULL)
+		{
+			SingleReplyQueue = xQueueCreate(1,sizeof(DD_message));
+			vQueueAddToRegistry( SingleReplyQueue, "ActiveReplyQueue" );
+		}
+		else
+		{
+			printf("Shouldn't be here");
+		}
 
-	// Create message struct
-	Message.RequestMessage.MessageType = REQUEST_ACTIVE;
-	Message.RequestMessage.ReplyQueue = ReplyQueue;
+		// Delete task
 
-	// Send message struct to scheduler
-	if (xQueueSend( SchedulerQueue, &Message, portMAX_DELAY ) != pdTRUE) DPRINTF("Scheduler Queue Error\n") ;
 
-	// Wait for reply @ queue
-	while ( xQueueReceive( ReplyQueue, &Message, portMAX_DELAY ) != pdTRUE) {;}
+		// Create message struct
+		Message.RequestMessage.MessageType = REQUEST_ACTIVE;
+		Message.RequestMessage.ReplyQueue = SingleReplyQueue;
+
+		// Send message struct to scheduler
+
+
+		// Send message struct to scheduler
+		if (xQueueSend( SchedulerQueue, &Message, portMAX_DELAY ) != pdTRUE) DPRINTF("Scheduler Queue Error\n") ;
+
+		// Wait for reply @ queue
+		while ( xQueueReceive( SingleReplyQueue, &Message, portMAX_DELAY ) != pdTRUE) {;}
+
+		list = Message.TaskListResponse.List;
 		// Received message, delete queue
-	vQueueDelete( ReplyQueue );
-	ReplyQueue = NULL;
-	list = Message.TaskListResponse.List;
+		vQueueDelete( SingleReplyQueue );
+		SingleReplyQueue = NULL;
+		xSemaphoreGive(xReplyMutex);
+	}
 	return 0;
 }
 

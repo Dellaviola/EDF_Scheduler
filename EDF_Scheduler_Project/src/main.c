@@ -110,13 +110,16 @@ int main(void)
 	container.Overdue = OverdueList;
 
 	// Create Mutex
-//	xReplyMutex = xSemaphoreCreateMutex();
-//	xSemaphoreGive(xReplyMutex);
-//	vQueueAddToRegistry( xReplyMutex, "Reply Mutex" );
+	xReplyMutex = xSemaphoreCreateMutex();
+	xSemaphoreGive(xReplyMutex);
+	vQueueAddToRegistry( xReplyMutex, "Reply Mutex" );
 
 	// Create Timers
 	xTimers[0] = xTimerCreate("PeriodicTask", pdMS_TO_TICKS(2000), pdFALSE, (void *) 0, vPeriodicCallback);
 	xTimers[1] = xTimerCreate("Debounce", pdMS_TO_TICKS(50), pdTRUE, (void *) 0, vDebounce);
+//	xTimers[3] = xTimerCreate("Deadline", 1, pdFALSE, (void *) 0, vDeadlineCallback);
+//	xTimers[4] = xTimerCreate("List", pdMS_TO_TICKS(5000), pdFALSE, (void *) 0, vListCallback);
+//	xTimerStart(xTimers[4],0);
 
 	// Create Tasks
 	xTaskCreate( DD_Scheduler_Task, "Scheduler", configMINIMAL_STACK_SIZE, &container, 30, NULL);
@@ -142,7 +145,7 @@ static void DD_Scheduler_Task( void *pvParameters )
 
 	while(1)
 	{
-		if ( xQueueReceive( SchedulerQueue, &Received, 1000 ) ) {
+		if ( xQueueReceive( SchedulerQueue, &Received, 1000 )) {
 
 			DPRINTF("Task Message: %d\n", Received.ID.MessageType);
 
@@ -159,6 +162,7 @@ static void DD_Scheduler_Task( void *pvParameters )
 
 					xQueueSend(Received.CreateMessage.ReplyQueue, &Out, 1000);
 
+
 					break;
 
 				case(DELETE):
@@ -169,9 +173,7 @@ static void DD_Scheduler_Task( void *pvParameters )
 
 					Out.DeleteResponse.MessageType = CREATE;
 					Out.DeleteResponse.retval = DELETE;
-
 					xQueueSend(Received.DeleteMessage.ReplyQueue, &Out, 1000);
-
 					break;
 
 				case(REQUEST_ACTIVE):
@@ -189,22 +191,34 @@ static void DD_Scheduler_Task( void *pvParameters )
 				break;
 
 				case(UPDATE_ACTIVE):
-					printf("Acknowledge Update Active List Requests\n");
-					// Received->
+
+					//
+
 				break;
 
 				default:
-					printf("nicelydone");
+					printf("Improper Message ID");
 				break;
 			}
 
 			// Update priorities
 			UBaseType_t i;
 			TaskList * temp = param->Active;
-			for (i = list_size(temp) + 1; i > 1; i--) {
+			i = list_size(temp) + 1;
+			if (i > 27) i = 27;
+			for(i; i > 1; i--) {
 				if (temp->Handle) vTaskPrioritySet( temp->Handle, i );
 				temp = temp->Next;
+				if((i == 1) && temp)
+				{
+					if (temp->Handle) vTaskPrioritySet( temp->Handle, i );
+					temp = temp->Next;
+				}
 			}
+//			xTimerStop(xTimers[3], 0);
+//			if(param->Active->Handle){
+//				xTimerChangePeriod(xTimers[3], param->Active->Deadline, 0);
+//			}
 		}
 	}
 }
@@ -267,16 +281,17 @@ static void DD_Generator_Task( void *pvParameters )
 
 static void DD_Monitor_Task( void *pvParameters )
 {
-	ListContainer* param = (ListContainer* )pvParameters;
+	TaskList* list = NULL;
 
 	while(1)
 	{
-		//printf("idling\n");
 
-		// Message Scheduler to update the lists
-//		xQueueSend(blah blah);
+//		if(xTimerIsTimerActive(xTimers[4]) == pdFALSE){
+//			DPRINTF("Requesting List\n");
+//			dd_return_active_list(list);
+//			xTimerStart(xTimers[4],1000);
+//		}
 
-		// Check system usage, etc.
 	}
 }
 
