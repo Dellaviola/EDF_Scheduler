@@ -22,11 +22,13 @@
 #include "../FreeRTOS_Source/include/event_groups.h"
 
 #include "options.h"
+#include "dd_scheduler.h"
 
 EventGroupHandle_t xTimerEvents;
 
 void vPeriodicCallback(void* arg);
 void vDebounce(void* arg);
+void vMissedDeadline(void* arg);
 
 
 

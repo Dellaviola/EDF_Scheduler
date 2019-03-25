@@ -38,3 +38,12 @@ void vDebounce(void* arg)
 		state = 0;
 	}
 }
+
+void vMissedDeadline(void* arg)
+{
+	DD_message Message;
+
+	Message.ID.MessageType = UPDATE_ACTIVE;
+
+	xQueueSend( SchedulerQueue, &Message, 0 );
+}

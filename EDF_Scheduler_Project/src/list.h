@@ -27,7 +27,7 @@ typedef struct TaskList{
 
 	TaskHandle_t Handle;
 	TickType_t Deadline;
-	uint32_t TaskType;
+	char * Name;
 	struct TaskList* Next;
 
 

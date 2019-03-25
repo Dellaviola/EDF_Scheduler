@@ -15,18 +15,19 @@ void list_add(TaskList * list, TaskHandle_t TaskHandle, TickType_t Deadline)
 {
 
 	TaskList * temp = list;
-	TaskList * node = malloc(sizeof(TaskList));
+	TaskList * node = (TaskList*)pvPortMalloc(sizeof(TaskList));
 	node->Handle = TaskHandle;
 	node->Deadline = Deadline;
+	node->Name = pcTaskGetName(TaskHandle);
 
 	// Case: empty
 	if (temp->Handle == NULL)
 	{
-		free(node);
+		vPortFree((void*)node);
 		list->Deadline = Deadline;
 		list->Handle = TaskHandle;
+		list->Name = pcTaskGetName(TaskHandle);
 		list->Next = NULL;
-		list->TaskType = 0;
 	}
 	// Case: new item has earliest deadline
 	else if (temp->Deadline > Deadline)
@@ -37,7 +38,7 @@ void list_add(TaskList * list, TaskHandle_t TaskHandle, TickType_t Deadline)
 	else while (temp)
 	{
 		//Case: General
-		if (temp->Next->Deadline > Deadline)
+		if (temp->Next && (temp->Next->Deadline > Deadline))
 		{
 			node->Next = temp->Next;
 			temp->Next = node;
@@ -70,16 +71,17 @@ void list_remove(TaskList * list, TaskHandle_t TaskHandle)
 	{
 		TaskNode * temp2 = temp->Next;
 		*list = *temp->Next;
-		free(temp2);
+		vPortFree((void*)temp2);
 
 	}
 	//Case: remove only item in the list, and reset thelist
 	else if (temp->Handle == TaskHandle)
 	{
 
+		//vPortFree((void*)temp);
 		list->Next = 0;
 		list->Handle = 0;
-		free(temp);
+
 
 	}
 	// Case:  General
@@ -89,7 +91,7 @@ void list_remove(TaskList * list, TaskHandle_t TaskHandle)
 		{
 			TaskNode * temp2 = temp->Next;
 			temp->Next = temp2->Next;
-			free(temp2);
+			vPortFree((void*)temp2);
 		}
 		temp = temp->Next;
 	}
