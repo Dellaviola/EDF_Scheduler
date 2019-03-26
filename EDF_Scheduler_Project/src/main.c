@@ -101,9 +101,9 @@ static void User_Periodic3( void * pvParameters )
 }
 static void User_Periodic4( void * pvParameters )
 {
-//	static uint32_t led = 0;
-//	led++;
-//	if (led == 4) led = 0;
+	static uint32_t led = 0;
+	led++;
+	if (led == 4) led = 0;
 //	uint32_t ledmemory = led;
 	TickType_t xLastWakeTime = xTaskGetTickCount();
 
@@ -113,7 +113,7 @@ static void User_Periodic4( void * pvParameters )
 		vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS((TickType_t) pvParameters));
 		TaskHandle_t x = xTaskGetCurrentTaskHandle();
 //		STM_EVAL_LEDOff(ledmemory);
-//		dd_delete(x);
+		if(led != 0) dd_delete(x);
 	}
 }
 static void User_Random( void *pvParameters )
