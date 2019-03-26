@@ -16,11 +16,14 @@ void list_add(TaskList * list, TaskHandle_t TaskHandle, TickType_t Deadline)
 
 	TaskList * temp = list;
 	TaskList * node = (TaskList*)pvPortMalloc(sizeof(TaskList));
+
+	// Initialize node
 	node->Handle = TaskHandle;
 	node->Deadline = Deadline;
+	node->Type = list->Type;
 	node->Name = pcTaskGetName(TaskHandle);
 
-	// Case: empty
+	// Case: Empty
 	if (temp->Handle == NULL)
 	{
 		vPortFree((void*)node);
@@ -29,7 +32,7 @@ void list_add(TaskList * list, TaskHandle_t TaskHandle, TickType_t Deadline)
 		list->Name = pcTaskGetName(TaskHandle);
 		list->Next = NULL;
 	}
-	// Case: new item has earliest deadline
+	// Case: New item has earliest deadline
 	else if (temp->Deadline > Deadline)
 	{
 		node->Next = list;
@@ -45,7 +48,7 @@ void list_add(TaskList * list, TaskHandle_t TaskHandle, TickType_t Deadline)
 			temp = NULL;
 			break;
 		}
-		// Case: new item goes on back of the list
+		// Case: New item goes on back of the list
 		else if (temp->Next == NULL)
 		{
 			temp->Next = node;
@@ -64,27 +67,27 @@ void list_remove(TaskList * list, TaskHandle_t TaskHandle)
 
 	if(list == NULL)
 	{
-		while(1){;} //empty list access
+		return; //empty list access
 	}
-	//Case: remove first item
+
+	// If this is an overdue list free allocated string
+	if(list->Type == 1) vPortFree(TaskHandle);
+
+	// Case: Remove first item
 	if((temp->Handle == TaskHandle) && temp->Next)
 	{
 		TaskNode * temp2 = temp->Next;
 		*list = *temp->Next;
 		vPortFree((void*)temp2);
-
 	}
-	//Case: remove only item in the list, and reset thelist
+
+	// Case: Remove only item in the list, and reset the list
 	else if (temp->Handle == TaskHandle)
 	{
-
-		//vPortFree((void*)temp);
 		list->Next = 0;
 		list->Handle = 0;
-
-
 	}
-	// Case:  General
+	// Case: General
 	else while (temp->Next)
 	{
 		if (temp->Next->Handle == TaskHandle)

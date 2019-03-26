@@ -8,7 +8,7 @@
 #ifndef OPTIONS_H_
 #define OPTIONS_H_
 
-#define DEBUG 0
+#define DEBUG 0		// Enable (1) or Disable (0) DPRINTF debug statements
 
 #if DEBUG == 1
     #define DPRINTF printf

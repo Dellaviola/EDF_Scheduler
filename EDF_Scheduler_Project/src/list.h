@@ -27,21 +27,21 @@ typedef struct TaskList{
 
 	TaskHandle_t Handle;
 	TickType_t Deadline;
+	uint32_t Type;
 	char * Name;
 	struct TaskList* Next;
 
 
 }TaskList, TaskNode;
 
-typedef struct ListContainer{
-	TaskList *Active;
-	TaskList *Overdue;
-}ListContainer;
+//typedef struct ListContainer{
+//	TaskList *Active;
+//	TaskList *Overdue;
+//}ListContainer;
 
 /*-----------------------------------------------------------*/
 
 // List Prototypes
-void list_init(void); //creates null list head
 void list_add(TaskList *, TaskHandle_t, TickType_t);
 void list_remove(TaskList *, TaskHandle_t);
 void list_delete(TaskList *);

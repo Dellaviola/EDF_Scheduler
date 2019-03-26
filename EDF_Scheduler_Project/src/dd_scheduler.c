@@ -19,7 +19,7 @@ TaskHandle_t dd_tcreate(Task_param_s param)
 	DD_message Message;
 
 	// Create task
-	Returned = xTaskCreate( param.task, param.name, configMINIMAL_STACK_SIZE,(TickType_t) param.deadline, 0, &TaskHandle);
+	Returned = xTaskCreate( param.task, param.name, configMINIMAL_STACK_SIZE, (void*)param.deadline, 0, &TaskHandle);
 
 	if ( Returned != pdPASS ) {
 		// Something went wrong with task creation
@@ -63,9 +63,8 @@ void dd_delete(TaskHandle_t TaskHandle)
 	return;
 }
 
-uint32_t dd_return_active_list(const TaskList** list)
+uint32_t dd_return_active_list(TaskList** list)
 {
-	extern QueueHandle_t ListQueue;
 	extern QueueHandle_t SchedulerQueue;
 	DD_message Message;
 
@@ -76,8 +75,10 @@ uint32_t dd_return_active_list(const TaskList** list)
 	// Send message struct to scheduler
 	if (xQueueSend( SchedulerQueue, &Message, portMAX_DELAY ) != pdTRUE) DPRINTF("Scheduler Queue Error\n") ;
 
-	// Wait for reply @ queue
+	// Wait for reply
 	*list = (TaskList*)ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
+		// Task notify take acts like a queue of size 1
+
 
 	if(list == 0)
 	{
@@ -90,9 +91,8 @@ uint32_t dd_return_active_list(const TaskList** list)
 	}
 }
 
-uint32_t dd_return_overdue_list(const TaskList** list)
+uint32_t dd_return_overdue_list(TaskList** list)
 {
-	extern QueueHandle_t ListQueue;
 	extern QueueHandle_t SchedulerQueue;
 	DD_message Message;
 
@@ -103,8 +103,7 @@ uint32_t dd_return_overdue_list(const TaskList** list)
 	// Send message struct to scheduler
 	if (xQueueSend( SchedulerQueue, &Message, portMAX_DELAY ) != pdTRUE) DPRINTF("Scheduler Queue Error\n") ;
 
-	// Wait for reply @ queue
-
+	// Wait for reply
 	*list = (TaskList*)ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
 
 	if(list == 0)

@@ -11,6 +11,7 @@ void vPeriodicCallback(void* arg)
 {
 	(void) arg;
 
+	// Tell generator to add periodic tasks
 	xEventGroupSetBits(xTimerEvents, (1 << 0));
 
 	return;
@@ -45,9 +46,11 @@ void vMissedDeadline(void* arg)
 
 	Message.ID.MessageType = UPDATE_ACTIVE;
 
+	// Send message to scheduler
 	xQueueSend( SchedulerQueue, &Message, 0 );
 }
 void vListCallback(void* arg)
 {
+	// Tell monitor to ask for list
 	xEventGroupSetBits(xMonitorEvents, (1 << 0));
 }

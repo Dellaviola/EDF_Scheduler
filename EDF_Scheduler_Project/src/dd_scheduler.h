@@ -86,21 +86,19 @@ typedef union DD_Message{
 
 // Global scheduler queue
 xQueueHandle SchedulerQueue;
-xQueueHandle ListQueue;
 
 // Timer Handle
-
 TimerHandle_t xTimers[5];
 
-// Mutex
-SemaphoreHandle_t xFunctionMutex;
+// Lazy Global
+uint16_t total_remove;
 
 /*-----------------------------------------------------------*/
 
 TaskHandle_t dd_tcreate(Task_param_s);
 void dd_delete(TaskHandle_t);
-uint32_t dd_return_active_list(const TaskList**);
-uint32_t dd_return_overdue_list(const TaskList**);
+uint32_t dd_return_active_list(TaskList**);
+uint32_t dd_return_overdue_list(TaskList**);
 
 /*-----------------------------------------------------------*/
 
