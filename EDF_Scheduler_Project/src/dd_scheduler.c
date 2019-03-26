@@ -63,7 +63,7 @@ void dd_delete(TaskHandle_t TaskHandle)
 	return;
 }
 
-uint32_t dd_return_active_list(const TaskList *list)
+uint32_t dd_return_active_list(const TaskList** list)
 {
 	extern QueueHandle_t ListQueue;
 	extern QueueHandle_t SchedulerQueue;
@@ -71,17 +71,26 @@ uint32_t dd_return_active_list(const TaskList *list)
 
 	// Create message struct
 	Message.RequestMessage.MessageType = REQUEST_ACTIVE;
+	Message.RequestMessage.OwnerHandle = xTaskGetCurrentTaskHandle();
 
 	// Send message struct to scheduler
 	if (xQueueSend( SchedulerQueue, &Message, portMAX_DELAY ) != pdTRUE) DPRINTF("Scheduler Queue Error\n") ;
 
 	// Wait for reply @ queue
-	while ( xQueueReceive( ListQueue, &list, portMAX_DELAY ) != pdTRUE) {;}
+	*list = (TaskList*)ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
 
-	return 0;
+	if(list == 0)
+	{
+		DPRINTF("No Overdue Tasks\n");
+		return 0;
+	}
+	else
+	{
+		return 1;
+	}
 }
 
-uint32_t dd_return_overdue_list(const TaskList *list)
+uint32_t dd_return_overdue_list(const TaskList** list)
 {
 	extern QueueHandle_t ListQueue;
 	extern QueueHandle_t SchedulerQueue;
@@ -89,13 +98,24 @@ uint32_t dd_return_overdue_list(const TaskList *list)
 
 	// Create message struct
 	Message.RequestMessage.MessageType = REQUEST_OVERDUE;
+	Message.RequestMessage.OwnerHandle = xTaskGetCurrentTaskHandle();
 
 	// Send message struct to scheduler
 	if (xQueueSend( SchedulerQueue, &Message, portMAX_DELAY ) != pdTRUE) DPRINTF("Scheduler Queue Error\n") ;
 
 	// Wait for reply @ queue
-	while ( xQueueReceive( ListQueue, &list, portMAX_DELAY ) != pdTRUE) {;}
 
-	return 0;
+	*list = (TaskList*)ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
+
+	if(list == 0)
+	{
+		DPRINTF("No Overdue Tasks\n");
+		return 0;
+	}
+	else
+	{
+		return 1;
+	}
+
 }
 

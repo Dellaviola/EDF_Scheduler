@@ -47,3 +47,7 @@ void vMissedDeadline(void* arg)
 
 	xQueueSend( SchedulerQueue, &Message, 0 );
 }
+void vListCallback(void* arg)
+{
+	xEventGroupSetBits(xMonitorEvents, (1 << 0));
+}

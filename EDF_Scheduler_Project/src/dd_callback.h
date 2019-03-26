@@ -25,10 +25,12 @@
 #include "dd_scheduler.h"
 
 EventGroupHandle_t xTimerEvents;
+EventGroupHandle_t xMonitorEvents;
 
 void vPeriodicCallback(void* arg);
 void vDebounce(void* arg);
 void vMissedDeadline(void* arg);
+void vListCallback(void* arg);
 
 
 

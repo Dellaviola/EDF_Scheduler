@@ -45,6 +45,7 @@ typedef enum {
 typedef struct Scheduler_request_message{
 
 	MessageType_t MessageType;
+	TaskHandle_t OwnerHandle;
 
 }Scheduler_request_message;
 
@@ -98,8 +99,8 @@ SemaphoreHandle_t xFunctionMutex;
 
 TaskHandle_t dd_tcreate(Task_param_s);
 void dd_delete(TaskHandle_t);
-uint32_t dd_return_active_list(const TaskList*);
-uint32_t dd_return_overdue_list(const TaskList*);
+uint32_t dd_return_active_list(const TaskList**);
+uint32_t dd_return_overdue_list(const TaskList**);
 
 /*-----------------------------------------------------------*/
 
